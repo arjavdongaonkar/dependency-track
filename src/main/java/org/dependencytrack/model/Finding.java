@@ -88,6 +88,7 @@ public class Finding implements Serializable {
                  , "FINDINGATTRIBUTION"."REFERENCE_URL"
                  , "ANALYSIS"."STATE"
                  , "ANALYSIS"."SUPPRESSED"
+                 , "FINDINGATTRIBUTION"."SEVERITY" AS fs
               FROM "COMPONENT"
              INNER JOIN "COMPONENTS_VULNERABILITIES"
                 ON "COMPONENT"."ID" = "COMPONENTS_VULNERABILITIES"."COMPONENT_ID"
@@ -191,7 +192,8 @@ public class Finding implements Serializable {
         } else {
             optValue(vulnerability, "recommendation", o[12]);
         }
-        final Severity severity = VulnerabilityUtil.getSeverity(o[13], (BigDecimal) o[14], (BigDecimal) o[15], (BigDecimal) o[16], (BigDecimal) o[17], (BigDecimal) o[18]);
+        Object severityValue = o[28] == null ? o[13] : o[28];
+        final Severity severity = VulnerabilityUtil.getSeverity(severityValue, (BigDecimal) o[14], (BigDecimal) o[15], (BigDecimal) o[16], (BigDecimal) o[17], (BigDecimal) o[18]);
         optValue(vulnerability, "cvssV2BaseScore", o[14]);
         optValue(vulnerability, "cvssV3BaseScore", o[15]);
         optValue(vulnerability, "owaspLikelihoodScore", o[16]);
@@ -215,6 +217,7 @@ public class Finding implements Serializable {
 
         optValue(analysis, "state", o[26]);
         optValue(analysis, "isSuppressed", o[27], false);
+        optValue(attribution, "severity", o[28]);
         if (o.length > 30) {
             optValue(vulnerability, "published", o[28]);
             optValue(component, "projectName", o[30]);

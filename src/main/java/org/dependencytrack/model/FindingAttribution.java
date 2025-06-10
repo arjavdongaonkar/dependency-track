@@ -18,9 +18,11 @@
  */
 package org.dependencytrack.model;
 
+import alpine.common.validation.RegexSequence;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Pattern;
 import org.dependencytrack.tasks.scanners.AnalyzerIdentity;
 
 import jakarta.validation.constraints.NotNull;
@@ -92,10 +94,15 @@ public class FindingAttribution implements Serializable {
     @NotNull
     private UUID uuid;
 
+    @Persistent
+    @Column(name = "SEVERITY")
+    @Pattern(regexp = RegexSequence.Definition.PRINTABLE_CHARS, message = "The severity may only contain printable characters")
+    private Severity severity;
+
     public FindingAttribution() {}
 
     public FindingAttribution(Component component, Vulnerability vulnerability, AnalyzerIdentity analyzerIdentity,
-                              String alternateIdentifier, String referenceUrl) {
+                              String alternateIdentifier, String referenceUrl, Severity severity) {
         this.component = component;
         this.project = component.getProject();
         this.vulnerability = vulnerability;
@@ -103,6 +110,7 @@ public class FindingAttribution implements Serializable {
         this.attributedOn = new Date();
         this.alternateIdentifier = alternateIdentifier;
         this.referenceUrl = maybeTrimUrl(referenceUrl);
+        this.severity = severity;
     }
 
     public long getId() {
@@ -183,4 +191,11 @@ public class FindingAttribution implements Serializable {
         return parts[0].substring(0, 255);
     }
 
+    public Severity getSeverity() {
+        return severity;
+    }
+
+    public void setSeverity(Severity severity) {
+        this.severity = severity;
+    }
 }
