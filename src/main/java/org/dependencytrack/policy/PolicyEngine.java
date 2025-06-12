@@ -164,7 +164,10 @@ public class PolicyEngine {
                 break;
             }
         }
-        return policy.isInvertTagMatch() != flag;
+        if(policy.isInvertTagMatch() && !flag) {
+            return true;
+        }
+        return flag;
     }
 
 
