@@ -39,7 +39,7 @@ public class TrivyParser {
         vulnerability.setPatchedVersions(data.getFixedVersion());
 
         // get the id of the data record (vulnerability)
-        vulnerability.setVulnId(data.getVulnerabilityId());
+        vulnerability.setVulnId(data.getVulnerabilityId() + "-" + data.getPkgIdentifier().getUid());
         vulnerability.setTitle(data.getTitle());
         vulnerability.setDescription(data.getDescription());
         vulnerability.setSeverity(parseSeverity(data.getSeverity()));
