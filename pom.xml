@@ -107,16 +107,16 @@
         <lib.json-unit.version>4.1.1</lib.json-unit.version>
         <lib.junit.version>5.11.4</lib.junit.version>
         <lib.lucene.version>8.11.4</lib.lucene.version>
-        <lib.maven-artifact.version>3.9.9</lib.maven-artifact.version>
+        <lib.maven-artifact.version>3.9.10</lib.maven-artifact.version>
         <lib.mockserver-netty.version>5.15.0</lib.mockserver-netty.version>
         <lib.open-vulnerability-clients.version>8.0.0</lib.open-vulnerability-clients.version>
         <lib.packageurl.version>1.5.0</lib.packageurl.version>
         <lib.pebble.version>3.2.4</lib.pebble.version>
-        <lib.protobuf-java.version>4.31.0</lib.protobuf-java.version>
+        <lib.protobuf-java.version>4.31.1</lib.protobuf-java.version>
         <lib.resilience4j.version>2.2.0</lib.resilience4j.version>
         <lib.swagger-parser.version>2.1.25</lib.swagger-parser.version>
         <lib.junit-pioneer.version>2.3.0</lib.junit-pioneer.version>
-        <lib.testcontainers.version>1.21.0</lib.testcontainers.version>
+        <lib.testcontainers.version>1.21.1</lib.testcontainers.version>
         <lib.wiremock.version>2.35.2</lib.wiremock.version>
         <lib.woodstox.version>7.0.0</lib.woodstox.version>
         <lib.signpost-core.version>2.1.1</lib.signpost-core.version>
@@ -131,7 +131,7 @@
         <lib.jdbc-driver.postgresql.version>42.7.5</lib.jdbc-driver.postgresql.version>
         <!-- Maven Plugin Properties -->
         <plugin.retirejs.breakOnFailure>false</plugin.retirejs.breakOnFailure>
-        <plugin.jetty.version>12.0.21</plugin.jetty.version>
+        <plugin.jetty.version>12.0.22</plugin.jetty.version>
         <plugin.protoc-jar.version>3.11.4</plugin.protoc-jar.version>
         <!-- SonarCloud properties -->
         <sonar.exclusions>src/main/webapp/**</sonar.exclusions>
@@ -594,7 +594,7 @@
             <plugin>
                 <groupId>io.github.ascopes</groupId>
                 <artifactId>protobuf-maven-plugin</artifactId>
-                <version>3.2.2</version>
+                <version>3.4.1</version>
                 <configuration>
                     <protocVersion>${lib.protobuf-java.version}</protocVersion>
                     <sourceDirectories>
@@ -690,7 +690,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>3.5.0</version>
+                <version>3.5.1</version>
                 <executions>
                     <execution>
                         <id>merge-services-bom</id>
@@ -759,7 +759,7 @@
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-clean-plugin</artifactId>
-                            <version>3.4.1</version>
+                            <version>3.5.0</version>
                             <configuration>
                                 <excludeDefaultDirectories>true</excludeDefaultDirectories>
                                 <filesets>
