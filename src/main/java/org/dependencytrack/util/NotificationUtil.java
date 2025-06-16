@@ -829,7 +829,7 @@ public final class NotificationUtil {
 
     public static String generateNotificationTitle(String messageType, Project project) {
         if (project != null) {
-            return messageType + " on Project: [" + project.toString() + "]";
+            return messageType + " on Project: [" + project.getName() + "]";
         }
         return messageType;
     }
