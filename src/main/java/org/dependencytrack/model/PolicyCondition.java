@@ -91,7 +91,8 @@ public class PolicyCondition implements Serializable {
         VULNERABILITY_ID,
         VERSION_DISTANCE,
         EPSS,
-        ATTRIBUTED_ON
+        ATTRIBUTED_ON,
+        PATCH_VERSION
     }
 
     public enum FetchGroup {

@@ -62,6 +62,7 @@ public class PolicyEngine {
         evaluators.add(new VersionDistancePolicyEvaluator());
         evaluators.add(new EpssPolicyEvaluator());
         evaluators.add(new AttributedOnPolicyEvaluator());
+        evaluators.add(new PatchedVersionPolicyEvaluator());
     }
 
     public List<PolicyViolation> evaluate(final List<Component> components) {
@@ -146,7 +147,8 @@ public class PolicyEngine {
         }
         return switch (subject) {
             case CWE, SEVERITY, VULNERABILITY_ID, EPSS -> PolicyViolation.Type.SECURITY;
-            case AGE, COORDINATES, PACKAGE_URL, CPE, SWID_TAGID, COMPONENT_HASH, VERSION, VERSION_DISTANCE, ATTRIBUTED_ON ->
+            case AGE, COORDINATES, PACKAGE_URL, CPE, SWID_TAGID, COMPONENT_HASH, VERSION, VERSION_DISTANCE, ATTRIBUTED_ON,
+                 PATCH_VERSION ->
                     PolicyViolation.Type.OPERATIONAL;
             case LICENSE, LICENSE_GROUP -> PolicyViolation.Type.LICENSE;
         };
