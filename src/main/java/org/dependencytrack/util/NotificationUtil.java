@@ -193,7 +193,7 @@ public final class NotificationUtil {
                     .scope(NotificationScope.PORTFOLIO)
                     .group(notificationGroup)
                     .title(generateNotificationTitle(title, analysis.getComponent().getProject()))
-                    .level(NotificationLevel.INFORMATIONAL)
+                    .level(NotificationLevel.WARNING)
                     .content(generateNotificationContent(analysis))
                     .subject(new AnalysisDecisionChange(analysis.getVulnerability(),
                             analysis.getComponent(), analysis.getProject(), analysis))
@@ -259,7 +259,7 @@ public final class NotificationUtil {
                 .scope(NotificationScope.PORTFOLIO)
                 .group(NotificationGroup.POLICY_VIOLATION)
                 .title(generateNotificationTitle(NotificationConstants.Title.POLICY_VIOLATION,policyViolation.getComponent().getProject()))
-                .level(NotificationLevel.INFORMATIONAL)
+                .level(NotificationLevel.ERROR)
                 .content(generateNotificationContent(pv))
                 .subject(new PolicyViolationIdentified(pv, pv.getComponent(), pv.getProject()))
         );
