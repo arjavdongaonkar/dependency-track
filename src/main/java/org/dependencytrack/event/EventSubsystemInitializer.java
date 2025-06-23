@@ -42,6 +42,7 @@ import org.dependencytrack.tasks.NistApiMirrorTask;
 import org.dependencytrack.tasks.NistMirrorTask;
 import org.dependencytrack.tasks.OsvDownloadTask;
 import org.dependencytrack.tasks.PolicyEvaluationTask;
+import org.dependencytrack.tasks.SASTUploadProcessingTask;
 import org.dependencytrack.tasks.ScheduledNotificationDispatchTask;
 import org.dependencytrack.tasks.TaskScheduler;
 import org.dependencytrack.tasks.TelemetrySubmissionTask;
@@ -116,6 +117,7 @@ public class EventSubsystemInitializer implements ServletContextListener {
         EVENT_SERVICE.subscribe(EpssMirrorEvent.class, EpssMirrorTask.class);
         EVENT_SERVICE.subscribe(TelemetrySubmissionEvent.class, TelemetrySubmissionTask.class);
         EVENT_SERVICE.subscribe(ScheduledNotificationDispatchEvent.class, ScheduledNotificationDispatchTask.class);
+        EVENT_SERVICE.subscribe(SASTUploadEvent.class, SASTUploadProcessingTask.class);
 
         EVENT_SERVICE_ST.subscribe(IndexEvent.class, IndexTask.class);
 
@@ -154,6 +156,7 @@ public class EventSubsystemInitializer implements ServletContextListener {
         EVENT_SERVICE.unsubscribe(EpssMirrorTask.class);
         EVENT_SERVICE.unsubscribe(TelemetrySubmissionTask.class);
         EVENT_SERVICE.unsubscribe(ScheduledNotificationDispatchTask.class);
+        EVENT_SERVICE.unsubscribe(SASTUploadProcessingTask.class);
         EVENT_SERVICE.shutdown(DRAIN_TIMEOUT_DURATION);
 
         EVENT_SERVICE_ST.unsubscribe(IndexTask.class);

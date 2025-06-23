@@ -16,19 +16,26 @@
  * SPDX-License-Identifier: Apache-2.0
  * Copyright (c) OWASP Foundation. All Rights Reserved.
  */
-package org.dependencytrack.model;
+/**
+ * Problem details for invalid CodeGuru report.
+ */
+package org.dependencytrack.resources.v1.problems;
 
-public enum VulnerabilityAnalysisLevel {
+import io.swagger.v3.oas.annotations.media.Schema;
 
-        BOM_UPLOAD_ANALYSIS,
+import java.util.List;
 
-        /**
-         * @since 4.12.4
-         */
-        ON_DEMAND,
+public class InvalidCodeGuruReportProblemDetails extends ProblemDetails {
 
-        PERIODIC_ANALYSIS,
 
-        SAST_UPLOAD_ANALYSIS
+    @Schema(description = "Errors identified during schema validation")
+    private List<String> errors;
 
+    public List<String> getErrors() {
+        return errors;
+    }
+
+    public void setErrors(List<String> errors) {
+        this.errors = errors;
+    }
 }
