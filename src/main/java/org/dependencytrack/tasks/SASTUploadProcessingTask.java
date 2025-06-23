@@ -27,6 +27,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.datanucleus.flush.FlushMode;
+import org.dependencytrack.event.PolicyEvaluationEvent;
 import org.dependencytrack.event.SASTUploadEvent;
 import org.dependencytrack.model.Analysis;
 import org.dependencytrack.model.AnalysisComment;
@@ -125,6 +126,7 @@ public class SASTUploadProcessingTask implements Subscriber {
         try {
             lock.lock();
             processCodeGuruReport(ctx, codeGuruReport);
+
             LOGGER.info("Dispatching %d events".formatted(eventsToDispatch.size()));
             eventsToDispatch.forEach(Event::dispatch);
         } catch (RuntimeException e) {
@@ -182,6 +184,9 @@ public class SASTUploadProcessingTask implements Subscriber {
 
                     LOGGER.info("Processing %d vulnerabilities".formatted(finalFindings.size()));
                     processVulnerabilities(qm, finalFindings, persistentComponentsByIdentity, identitiesByPath);
+                    final PolicyEvaluationEvent policyEvaluationEvent =
+                            new PolicyEvaluationEvent(processedComponents).project(ctx.project);
+                    Event.dispatch(policyEvaluationEvent);
                 } catch (Exception e) {
                     LOGGER.error("Error processing CodeGuru report in transaction", e);
                     throw new RuntimeException("Failed to process CodeGuru report", e);
@@ -323,9 +328,9 @@ public class SASTUploadProcessingTask implements Subscriber {
                 skippedCount++;
                 continue;
             }
-
-            final String vulnId = finding.getVulnerability().getId();
-            if (vulnId == null || vulnId.trim().isEmpty()) {
+            // Compute MD5 hash from filePath.path + codeSnippet[startLine].content
+            final String vulnId = computeVulnHash(finding);
+            if (vulnId.trim().isEmpty()) {
                 LOGGER.warn("Invalid vulnerability ID in finding, skipping");
                 skippedCount++;
                 continue;
@@ -337,7 +342,7 @@ public class SASTUploadProcessingTask implements Subscriber {
 
                 if (vulnerability == null) {
                     // Create new vulnerability from CodeGuru finding
-                    final Vulnerability parsedVulnerability = convertToVulnerability(finding);
+                    final Vulnerability parsedVulnerability = convertToVulnerability(finding, vulnId);
                     if (parsedVulnerability != null) {
                         vulnerability = qm.createVulnerability(parsedVulnerability, false);
                         qm.getPersistenceManager().flush();
@@ -458,11 +463,9 @@ public class SASTUploadProcessingTask implements Subscriber {
         return new ArrayList<>(componentsByPath.values());
     }
 
-    private Vulnerability convertToVulnerability(final AWSCodeGuruFinding finding) {
+    private Vulnerability convertToVulnerability(final AWSCodeGuruFinding finding, String vulnId) {
         Vulnerability vuln = new Vulnerability();
 
-        // Compute MD5 hash from filePath.path + codeSnippet[startLine].content
-        String vulnId = computeVulnHash(finding);
         vuln.setVulnId(vulnId);
 
         vuln.setSource(AWSCODEGURU);
