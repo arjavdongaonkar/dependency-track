@@ -21,7 +21,6 @@ package org.dependencytrack.tasks;
 import alpine.common.logging.Logger;
 import alpine.event.framework.Event;
 import alpine.event.framework.Subscriber;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections4.MultiValuedMap;
@@ -43,6 +42,7 @@ import org.dependencytrack.model.ViolationAnalysis;
 import org.dependencytrack.model.ViolationAnalysisComment;
 import org.dependencytrack.model.Vulnerability;
 import org.dependencytrack.parser.awscodeguru.AWSCodeGuruFinding;
+import org.dependencytrack.parser.awscodeguru.CodeGuruResponse;
 import org.dependencytrack.persistence.QueryManager;
 import org.dependencytrack.persistence.listener.IndexingInstanceLifecycleListener;
 import org.slf4j.MDC;
@@ -50,9 +50,10 @@ import org.slf4j.MDC;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -113,10 +114,13 @@ public class SASTUploadProcessingTask implements Subscriber {
     }
 
     private void processEvent(final Context ctx, final SASTUploadEvent event) {
-        final Map<String, List<AWSCodeGuruFinding>> codeGuruReport;
+        final List<AWSCodeGuruFinding> codeGuruFindings;
+        final CodeGuruResponse codeGuruResponse;
         try {
             final String reportJson = new String(event.getFindingsData(), StandardCharsets.UTF_8);
-            codeGuruReport = parseCodeGuruReport(reportJson);
+            codeGuruResponse = parseCodeGuruReport(reportJson);
+            codeGuruFindings = codeGuruResponse.getFindings();
+
         } catch (Exception e) {
             LOGGER.error("Failed to parse CodeGuru report", e);
             return;
@@ -125,7 +129,7 @@ public class SASTUploadProcessingTask implements Subscriber {
         final ReentrantLock lock = getLockForProjectAndNamespace(ctx.project, getClass().getSimpleName());
         try {
             lock.lock();
-            processCodeGuruReport(ctx, codeGuruReport);
+            processCodeGuruReport(ctx, codeGuruFindings);
 
             LOGGER.info("Dispatching %d events".formatted(eventsToDispatch.size()));
             eventsToDispatch.forEach(Event::dispatch);
@@ -136,18 +140,13 @@ public class SASTUploadProcessingTask implements Subscriber {
         }
     }
 
-    private Map<String, List<AWSCodeGuruFinding>> parseCodeGuruReport(final String reportJson) throws Exception {
+    private CodeGuruResponse parseCodeGuruReport(final String reportJson) throws Exception {
         final ObjectMapper objectMapper = new ObjectMapper();
-        final TypeReference<Map<String, List<AWSCodeGuruFinding>>> typeRef =
-                new TypeReference<>() {
-                };
-        return objectMapper.readValue(reportJson, typeRef);
+        return objectMapper.readValue(reportJson, CodeGuruResponse.class);
     }
 
-    private void processCodeGuruReport(final Context ctx, final Map<String, List<AWSCodeGuruFinding>> codeGuruReport) {
+    private void processCodeGuruReport(final Context ctx, final List<AWSCodeGuruFinding> findings) {
         LOGGER.info("Consuming uploaded CodeGuru report");
-
-        final List<AWSCodeGuruFinding> findings = codeGuruReport.getOrDefault("findings", Collections.emptyList());
 
         List<Component> components = extractComponentsFromFindings(findings);
         final int numComponentsTotal = components.size();
@@ -475,8 +474,8 @@ public class SASTUploadProcessingTask implements Subscriber {
         vuln.setDescription(finding.getDescription());
         vuln.setSeverity(convertSeverity(finding.getSeverity()));
 
-        vuln.setCreated(new Date(finding.getCreatedAt() * 1000L));
-        vuln.setUpdated(new Date((long) (finding.getUpdatedAt() * 1000L)));
+        vuln.setCreated(parseCodeGuruDate(finding.getCreatedAt()));
+        vuln.setUpdated(parseCodeGuruDate(finding.getUpdatedAt()));
 
         if (finding.getRemediation() != null && finding.getRemediation().getRecommendation() != null) {
             vuln.setRecommendation(finding.getRemediation().getRecommendation().getText());
@@ -501,6 +500,21 @@ public class SASTUploadProcessingTask implements Subscriber {
 
         vuln.setDetail(buildDetailedDescription(finding));
         return vuln;
+    }
+
+    private Date parseCodeGuruDate(String dateString) {
+        if (dateString == null || dateString.trim().isEmpty()) {
+            return new Date();
+        }
+
+        try {
+            String cleanedDate = dateString.replaceAll("(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})\\.(\\d{3})\\d*", "$1.$2");
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXXX");
+            return sdf.parse(cleanedDate);
+        } catch (ParseException e) {
+            LOGGER.warn("Failed to parse date: %s".formatted(dateString));
+            return new Date();
+        }
     }
 
     private String computeVulnHash(AWSCodeGuruFinding finding) {

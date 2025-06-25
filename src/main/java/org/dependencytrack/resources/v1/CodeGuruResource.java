@@ -73,7 +73,6 @@ public class CodeGuruResource extends AlpineResource {
     private static final Logger LOGGER = LoggerFactory.getLogger(CodeGuruResource.class);
 
     @POST
-    @Path("/upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(

@@ -25,7 +25,7 @@ import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AWSCodeGuruFinding {
-    private long createdAt;
+    private String createdAt;
     private String description;
     private String detectorId;
     private String detectorName;
@@ -39,7 +39,7 @@ public class AWSCodeGuruFinding {
     private String status;
     private String title;
     private String type;
-    private double updatedAt;
+    private String updatedAt;
     private Vulnerability vulnerability;
 
 
@@ -196,11 +196,11 @@ public class AWSCodeGuruFinding {
         }
     }
 
-    public long getCreatedAt() {
+    public String getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(long createdAt) {
+    public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
     }
 
@@ -308,11 +308,11 @@ public class AWSCodeGuruFinding {
         this.type = type;
     }
 
-    public double getUpdatedAt() {
+    public String getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(double updatedAt) {
+    public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
     }
 
