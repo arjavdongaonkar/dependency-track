@@ -185,6 +185,8 @@ public class SASTUploadProcessingTask implements Subscriber {
                     processVulnerabilities(qm, finalFindings, persistentComponentsByIdentity, identitiesByPath);
                     final PolicyEvaluationEvent policyEvaluationEvent =
                             new PolicyEvaluationEvent(processedComponents).project(ctx.project);
+                    persistentProject.setLastBomImport(new Date());
+                    qm.persist(persistentProject);
                     Event.dispatch(policyEvaluationEvent);
                 } catch (Exception e) {
                     LOGGER.error("Error processing CodeGuru report in transaction", e);
