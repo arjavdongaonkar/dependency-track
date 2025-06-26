@@ -61,11 +61,11 @@ public class SeverityPolicyEvaluator extends AbstractPolicyEvaluator {
                 LOGGER.debug("Evaluating component (" + component.getUuid() + ") against policy condition (" + condition.getUuid() + ")");
                 if (PolicyCondition.Operator.IS == condition.getOperator()) {
                     if (vulnerability.getSeverity().name().equals(condition.getValue())) {
-                        violations.add(new PolicyConditionViolation(condition, component));
+                        violations.add(new PolicyConditionViolation(condition, component, vulnerability));
                     }
                 } else if (PolicyCondition.Operator.IS_NOT == condition.getOperator()) {
                     if (! vulnerability.getSeverity().name().equals(condition.getValue())) {
-                        violations.add(new PolicyConditionViolation(condition, component));
+                        violations.add(new PolicyConditionViolation(condition, component, vulnerability));
                     }
                 }
             }

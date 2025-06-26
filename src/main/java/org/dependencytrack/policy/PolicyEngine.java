@@ -133,6 +133,7 @@ public class PolicyEngine {
         for (PolicyConditionViolation pcv : pcvList) {
             final PolicyViolation pv = new PolicyViolation();
             pv.setComponent(pcv.getComponent());
+            pv.setVulnerability(pcv.getVulnerability());
             pv.setPolicyCondition(pcv.getPolicyCondition());
             pv.setType(determineViolationType(pcv.getPolicyCondition().getSubject()));
             pv.setTimestamp(new Date());
