@@ -28,7 +28,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.POST;
@@ -42,6 +41,7 @@ import org.dependencytrack.auth.Permissions;
 import org.dependencytrack.event.SASTUploadEvent;
 import org.dependencytrack.model.Project;
 import org.dependencytrack.model.ProjectCollectionLogic;
+import org.dependencytrack.model.Tag;
 import org.dependencytrack.persistence.QueryManager;
 import org.glassfish.jersey.media.multipart.BodyPartEntity;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
@@ -53,8 +53,14 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.util.function.Predicate.not;
 
 /**
  * JAX-RS resources for processing AWS CodeGuru SAST findings.
@@ -63,7 +69,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @Path("/v1/codeguru")
-@Tag(name = "codeguru")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "codeguru")
 @SecurityRequirements({
         @SecurityRequirement(name = "ApiKeyAuth"),
         @SecurityRequirement(name = "BearerAuth")
@@ -101,8 +107,13 @@ public class CodeGuruResource extends AlpineResource {
             @DefaultValue("false") @FormDataParam("autoCreate") boolean autoCreate,
             @FormDataParam("projectName") String projectName,
             @FormDataParam("projectVersion") String projectVersion,
+            @FormDataParam("projectTags") String projectTags,
             @Parameter(schema = @Schema(type = "string")) @FormDataParam("findings") final List<FormDataBodyPart> findingsParts
     ) {
+
+        final List<org.dependencytrack.model.Tag> requestTags = (projectTags != null && !projectTags.isBlank())
+                ? Arrays.stream(projectTags.split(",")).map(String::trim).filter(not(String::isEmpty)).map(org.dependencytrack.model.Tag::new).toList()
+                : null;
 
         if (findingsParts == null || findingsParts.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST)
@@ -113,7 +124,7 @@ public class CodeGuruResource extends AlpineResource {
         if (projectUuid != null) {
             try (QueryManager qm = new QueryManager()) {
                 final Project project = qm.getObjectByUuid(Project.class, projectUuid);
-                return processCodeGuruFindings(qm, project, findingsParts);
+                return processCodeGuruFindings(qm, project, findingsParts, requestTags);
             }
         } else {
             try (QueryManager qm = new QueryManager()) {
@@ -143,7 +154,7 @@ public class CodeGuruResource extends AlpineResource {
                     }
                 }
 
-                return processCodeGuruFindings(qm, project, findingsParts);
+                return processCodeGuruFindings(qm, project, findingsParts, requestTags);
             }
         }
     }
@@ -151,7 +162,7 @@ public class CodeGuruResource extends AlpineResource {
     /**
      * Common logic that processes CodeGuru findings given a project and list of multi-part form objects.
      */
-    private Response processCodeGuruFindings(QueryManager qm, Project project, List<FormDataBodyPart> findingsParts) {
+    private Response processCodeGuruFindings(QueryManager qm, Project project, List<FormDataBodyPart> findingsParts, List<Tag> requestTags) {
         if (project == null) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity("The project could not be found")
@@ -169,6 +180,8 @@ public class CodeGuruResource extends AlpineResource {
                     .entity("CodeGuru findings cannot be uploaded to collection project")
                     .build();
         }
+
+        maybeBindTags(qm, project, requestTags);
 
         for (final FormDataBodyPart findingsPart : findingsParts) {
             final BodyPartEntity bodyPartEntity = (BodyPartEntity) findingsPart.getEntity();
@@ -193,4 +206,35 @@ public class CodeGuruResource extends AlpineResource {
 
         return Response.ok().build();
     }
+
+    private void maybeBindTags(final QueryManager qm, final Project project, final List<Tag> tags) {
+        if (tags == null) {
+            return;
+        }
+
+        // If the principal has the PROJECT_CREATION_UPLOAD permission,
+        // and a new project was created as part of this upload,
+        // the project might already have the requested tags.
+        final Set<String> existingTagNames = project.getTags() != null
+                ? project.getTags().stream().map(Tag::getName).collect(Collectors.toSet())
+                : Collections.emptySet();
+        final Set<String> requestTagNames = tags.stream().map(Tag::getName).collect(Collectors.toSet());
+
+        if (!Objects.equals(existingTagNames, requestTagNames)
+                && !hasPermission(Permissions.Constants.PORTFOLIO_MANAGEMENT)) {
+            // Most CI integrations will use API keys with PROJECT_CREATION_UPLOAD permission,
+            // but not PORTFOLIO_MANAGEMENT permission. They will not send different upload requests
+            // though, after a project was first created. Failing the request would break those
+            // integrations. Log a warning instead.
+            LOGGER.warn("""
+                    Project tags were provided as part of the BOM upload request, \
+                    but the authenticated principal is missing the %s permission; \
+                    Tags will not be modified""".formatted(Permissions.Constants.PORTFOLIO_MANAGEMENT));
+            return;
+        }
+
+        final Set<Tag> resolvedTags = qm.resolveTags(tags);
+        qm.bind(project, resolvedTags);
+    }
+
 }
