@@ -33,7 +33,9 @@ import org.dependencytrack.model.AnalysisComment;
 import org.dependencytrack.model.Classifier;
 import org.dependencytrack.model.Component;
 import org.dependencytrack.model.ComponentIdentity;
+import org.dependencytrack.model.ComponentProperty;
 import org.dependencytrack.model.DependencyMetrics;
+import org.dependencytrack.model.ExternalReference;
 import org.dependencytrack.model.FindingAttribution;
 import org.dependencytrack.model.PolicyViolation;
 import org.dependencytrack.model.Project;
@@ -67,6 +69,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static alpine.model.IConfigProperty.PropertyType.STRING;
 import static org.apache.commons.lang3.time.DurationFormatUtils.formatDurationHMS;
 import static org.datanucleus.FetchPlan.FETCH_SIZE_GREEDY;
 import static org.datanucleus.PropertyNames.PROPERTY_FLUSH_MODE;
@@ -449,19 +452,93 @@ public class SASTUploadProcessingTask implements Subscriber {
 
         for (final AWSCodeGuruFinding finding : findings) {
             final String filePath = finding.getVulnerability().getFilePath().getPath();
+            String fileName = finding.getVulnerability().getFilePath().getName();
             if (!componentsByPath.containsKey(filePath)) {
                 final Component component = new Component();
-                component.setName(filePath);
-                component.setGroup("aws-codeguru");
-                component.setVersion("1.0.0"); // Default version since CodeGuru doesn't provide version info
-                component.setClassifier(Classifier.FILE);
-                component.setDescription("File analyzed by AWS CodeGuru");
-                component.setBomRef(filePath);
+                setComponentAttributes(finding, component, filePath, fileName);
                 componentsByPath.put(filePath, component);
             }
         }
 
         return new ArrayList<>(componentsByPath.values());
+    }
+
+    private static void setComponentAttributes(AWSCodeGuruFinding finding, Component component, String filePath, String fileName) {
+        component.setName(filePath);
+        component.setGroup("aws-codeguru");
+        component.setVersion("1.0.0"); // Default version since CodeGuru doesn't provide version info
+        component.setClassifier(Classifier.FILE);
+        component.setDescription("");
+        component.setDescription(String.format("File analyzed by AWS CodeGuru: %s - %s",
+                filePath,
+                finding.getDetectorName()));
+        String purl = String.format("pkg:file/%s@%s",
+                filePath.replace("/", "%2F"),
+                finding.getGeneratorId());
+        component.setPurlCoordinates(purl);
+        component.setPurl(purl);
+        List<ExternalReference> externalRefs = new ArrayList<>();
+        if (finding.getRemediation() != null &&
+                finding.getRemediation().getRecommendation() != null &&
+                finding.getRemediation().getRecommendation().getURL() != null) {
+
+            ExternalReference remediationRef = new ExternalReference();
+            remediationRef.setType(org.cyclonedx.model.ExternalReference.Type.ADVISORIES);
+            remediationRef.setUrl(finding.getRemediation().getRecommendation().getURL());
+            remediationRef.setComment("AWS CodeGuru remediation guidance");
+            externalRefs.add(remediationRef);
+        }
+        component.setExternalReferences(externalRefs);
+        component.setBomRef(filePath);
+        List<ComponentProperty> properties = new ArrayList<>();
+
+        ComponentProperty detectorProp = new ComponentProperty();
+        detectorProp.setGroupName("codeguru");
+        detectorProp.setPropertyType(STRING);
+        detectorProp.setPropertyName("detectorId");
+        detectorProp.setPropertyValue(finding.getDetectorId());
+        properties.add(detectorProp);
+
+        ComponentProperty severityProp = new ComponentProperty();
+        severityProp.setGroupName("codeguru");
+        severityProp.setPropertyName("severity");
+        severityProp.setPropertyType(STRING);
+        severityProp.setPropertyValue(finding.getSeverity());
+        properties.add(severityProp);
+
+        ComponentProperty ruleProp = new ComponentProperty();
+        ruleProp.setGroupName("codeguru");
+        ruleProp.setPropertyName("ruleId");
+        ruleProp.setPropertyType(STRING);
+        ruleProp.setPropertyValue(finding.getRuleId());
+        properties.add(ruleProp);
+
+        if (finding.getDetectorTags() != null && !finding.getDetectorTags().isEmpty()) {
+            ComponentProperty tagsProp = new ComponentProperty();
+            tagsProp.setGroupName("codeguru");
+            tagsProp.setPropertyName("tags");
+            tagsProp.setPropertyType(STRING);
+            tagsProp.setPropertyValue(String.join(",", finding.getDetectorTags()));
+            properties.add(tagsProp);
+        }
+
+        ComponentProperty resourceProp = new ComponentProperty();
+        resourceProp.setGroupName("codeguru");
+        resourceProp.setPropertyName("resourceId");
+        resourceProp.setPropertyType(STRING);
+        resourceProp.setPropertyValue(finding.getResource().getId());
+        properties.add(resourceProp);
+
+        component.setProperties(properties);
+
+        if (fileName.contains(".")) {
+            component.setExtension(fileName.substring(fileName.lastIndexOf(".") + 1));
+        }
+        component.setNotes(String.format("CodeGuru Finding: %s\nType: %s\nStatus: %s\nCreated: %s",
+                finding.getTitle(),
+                finding.getType(),
+                finding.getStatus(),
+                finding.getCreatedAt()));
     }
 
     private Vulnerability convertToVulnerability(final AWSCodeGuruFinding finding, String vulnId) {
