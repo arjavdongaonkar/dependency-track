@@ -89,6 +89,7 @@ public class Finding implements Serializable {
                  , "ANALYSIS"."STATE"
                  , "ANALYSIS"."SUPPRESSED"
                  , "ANALYSIS"."SUPPRESSION_EXPIRATION"
+                 , "VULNERABILITY"."PATCHEDVERSIONS"
               FROM "COMPONENT"
              INNER JOIN "COMPONENTS_VULNERABILITIES"
                 ON "COMPONENT"."ID" = "COMPONENTS_VULNERABILITIES"."COMPONENT_ID"
@@ -136,6 +137,7 @@ public class Finding implements Serializable {
                  , "ANALYSIS"."STATE"
                  , "ANALYSIS"."SUPPRESSED"
                  , "ANALYSIS"."SUPPRESSION_EXPIRATION"
+                 , "VULNERABILITY"."PATCHEDVERSIONS"
                  , "VULNERABILITY"."PUBLISHED"
                  , "PROJECT"."UUID"
                  , "PROJECT"."NAME"
@@ -218,10 +220,11 @@ public class Finding implements Serializable {
         optValue(analysis, "state", o[26]);
         optValue(analysis, "isSuppressed", o[27], false);
         optValue(analysis, "suppressionExpiration", o[28]);
-        if (o.length > 31) {
-            optValue(vulnerability, "published", o[29]);
-            optValue(component, "projectName", o[31]);
-            optValue(component, "projectVersion", o[32]);
+        optValue(vulnerability, "patchedVersions", o[29]);
+        if (o.length > 32) {
+            optValue(vulnerability, "published", o[30]);
+            optValue(component, "projectName", o[32]);
+            optValue(component, "projectVersion", o[33]);
         }
     }
 

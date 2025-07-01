@@ -61,9 +61,9 @@ public class PatchedVersionPolicyEvaluator extends AbstractPolicyEvaluator {
                 final boolean expected = Boolean.parseBoolean(value);
 
                 if (PolicyCondition.Operator.IS == condition.getOperator() && hasPatchedVersion == expected) {
-                    violations.add(new PolicyConditionViolation(condition, component));
+                    violations.add(new PolicyConditionViolation(condition, component, vulnerability));
                 } else if (PolicyCondition.Operator.IS_NOT == condition.getOperator() && hasPatchedVersion != expected) {
-                    violations.add(new PolicyConditionViolation(condition, component));
+                    violations.add(new PolicyConditionViolation(condition, component, vulnerability));
                 }
             }
         }

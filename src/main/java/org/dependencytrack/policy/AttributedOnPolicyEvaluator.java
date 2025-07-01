@@ -113,7 +113,7 @@ public class AttributedOnPolicyEvaluator extends AbstractPolicyEvaluator {
 
             for (final PolicyCondition condition : conditions) {
                 if (evaluateCondition(condition, attributedDate.get())) {
-                    violations.add(new PolicyConditionViolation(condition, component));
+                    violations.add(new PolicyConditionViolation(condition, component, vulnerability));
                 }
             }
         }
