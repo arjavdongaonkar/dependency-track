@@ -47,12 +47,11 @@ jobs:
 
       - name: Build with Maven
         run: |-
-          mvn -B --no-transfer-progress clean
-          mvn -B --no-transfer-progress package -Dmaven.test.skip=true -P enhance -P embedded-jetty -Dservices.bom.merge.skip=false -Dlogback.configuration.file=src/main/docker/logback.xml
-          mvn -B --no-transfer-progress clean -P clean-exclude-wars
-          mvn -B --no-transfer-progress package -Dmaven.test.skip=true -P enhance -P embedded-jetty -P bundle-ui -Dservices.bom.merge.skip=false -Dlogback.configuration.file=src/main/docker/logback.xml
-          mvn -B --no-transfer-progress clean -P clean-exclude-wars
-          mvn -B --no-transfer-progress cyclonedx:makeBom -Dservices.bom.merge.skip=false org.codehaus.mojo:exec-maven-plugin:exec@merge-services-bom
+          mvn -B package -P quick -P enhance -P embedded-jetty -Dservices.bom.merge.skip=false -Dlogback.configuration.file=src/main/docker/logback.xml
+          mvn -B clean -P clean-exclude-wars
+          mvn -B package -P quick -P enhance -P embedded-jetty -P bundle-ui -Dservices.bom.merge.skip=false -Dlogback.configuration.file=src/main/docker/logback.xml
+          mvn -B clean -P clean-exclude-wars
+          mvn -B cyclonedx:makeBom -Dservices.bom.merge.skip=false org.codehaus.mojo:exec-maven-plugin:exec@merge-services-bom
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # tag=v4.6.2
@@ -90,7 +89,7 @@ jobs:
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # tag=v3.6.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # tag=v3.10.0
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # tag=v3.11.1
         id: buildx
         with:
           install: true
@@ -167,6 +166,6 @@ jobs:
 
       - name: Upload Trivy Scan Results to GitHub Security Tab
         if: ${{ inputs.publish-container }}
-        uses: github/codeql-action/upload-sarif@fca7ace96b7d713c7035871441bd52efbe39e27e # tag=v3.28.19
+        uses: github/codeql-action/upload-sarif@181d5eefc20863364f96762470ba6f862bdef56b # tag=v3.29.2
         with:
           sarif_file: 'trivy-results.sarif'
