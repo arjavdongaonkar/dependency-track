@@ -480,11 +480,11 @@ public class SASTUploadProcessingTask implements Subscriber {
         List<ExternalReference> externalRefs = new ArrayList<>();
         if (finding.getRemediation() != null &&
                 finding.getRemediation().getRecommendation() != null &&
-                finding.getRemediation().getRecommendation().getURL() != null) {
+                finding.getRemediation().getRecommendation().getUrl() != null) {
 
             ExternalReference remediationRef = new ExternalReference();
             remediationRef.setType(org.cyclonedx.model.ExternalReference.Type.ADVISORIES);
-            remediationRef.setUrl(finding.getRemediation().getRecommendation().getURL());
+            remediationRef.setUrl(finding.getRemediation().getRecommendation().getUrl());
             remediationRef.setComment("AWS CodeGuru remediation guidance");
             externalRefs.add(remediationRef);
         }
@@ -560,8 +560,8 @@ public class SASTUploadProcessingTask implements Subscriber {
             vuln.setRecommendation(finding.getRemediation().getRecommendation().getText());
 
             List<String> allReferences = new ArrayList<>();
-            if (finding.getRemediation().getRecommendation().getURL() != null) {
-                allReferences.add(finding.getRemediation().getRecommendation().getURL());
+            if (finding.getRemediation().getRecommendation().getUrl() != null) {
+                allReferences.add(finding.getRemediation().getRecommendation().getUrl());
             }
             if (finding.getVulnerability() != null && finding.getVulnerability().getReferenceUrls() != null) {
                 allReferences.addAll(finding.getVulnerability().getReferenceUrls());

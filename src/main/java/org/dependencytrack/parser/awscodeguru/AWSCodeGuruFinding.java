@@ -20,6 +20,7 @@
 package org.dependencytrack.parser.awscodeguru;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
@@ -42,13 +43,14 @@ public class AWSCodeGuruFinding {
     private String updatedAt;
     private Vulnerability vulnerability;
 
-
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Remediation {
         private Recommendation recommendation;
+        private List<SuggestedFix> suggestedFixes;
 
         public static class Recommendation {
             private String text;
-            private String URL;
+            private String url;
 
             public String getText() {
                 return text;
@@ -58,12 +60,34 @@ public class AWSCodeGuruFinding {
                 this.text = text;
             }
 
-            public String getURL() {
-                return URL;
+            @JsonProperty("url")
+            public String getUrl() {
+                return url;
             }
 
-            public void setURL(String URL) {
-                this.URL = URL;
+            public void setUrl(String url) {
+                this.url = url;
+            }
+        }
+
+        public static class SuggestedFix {
+            private String code;
+            private String description;
+
+            public String getCode() {
+                return code;
+            }
+
+            public void setCode(String code) {
+                this.code = code;
+            }
+
+            public String getDescription() {
+                return description;
+            }
+
+            public void setDescription(String description) {
+                this.description = description;
             }
         }
 
@@ -73,6 +97,14 @@ public class AWSCodeGuruFinding {
 
         public void setRecommendation(Recommendation recommendation) {
             this.recommendation = recommendation;
+        }
+
+        public List<SuggestedFix> getSuggestedFixes() {
+            return suggestedFixes;
+        }
+
+        public void setSuggestedFixes(List<SuggestedFix> suggestedFixes) {
+            this.suggestedFixes = suggestedFixes;
         }
     }
 
