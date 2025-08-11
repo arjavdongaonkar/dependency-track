@@ -27,50 +27,47 @@ import org.dependencytrack.model.Vulnerability;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Evaluates the severity of component vulnerabilities against a policy.
- *
- * @author Steve Springett
- * @since 4.1.0
- */
-public class SeverityPolicyEvaluator extends AbstractPolicyEvaluator {
+public class PatchedVersionPolicyEvaluator extends AbstractPolicyEvaluator {
 
-    private static final Logger LOGGER = Logger.getLogger(SeverityPolicyEvaluator.class);
+    private static final Logger LOGGER = Logger.getLogger(PatchedVersionPolicyEvaluator.class);
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public PolicyCondition.Subject supportedSubject() {
-        return PolicyCondition.Subject.SEVERITY;
+        return PolicyCondition.Subject.PATCH_VERSION;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<PolicyConditionViolation> evaluate(final Policy policy, final Component component) {
         final List<PolicyConditionViolation> violations = new ArrayList<>();
         final List<PolicyCondition> policyConditions = super.extractSupportedConditions(policy);
+
         if (policyConditions.isEmpty()) {
             return violations;
         }
-        //final Component component = qm.getObjectById(Component.class, c.getId());
+
         for (final Vulnerability vulnerability : qm.getAllVulnerabilities(component, false)) {
-            for (final PolicyCondition condition: policyConditions) {
+            final boolean hasPatchedVersion = vulnerability.getPatchedVersions() != null &&
+                    !vulnerability.getPatchedVersions().trim().isEmpty();
+
+            for (final PolicyCondition condition : policyConditions) {
                 LOGGER.debug("Evaluating component (" + component.getUuid() + ") against policy condition (" + condition.getUuid() + ")");
-                if (PolicyCondition.Operator.IS == condition.getOperator()) {
-                    if (vulnerability.getSeverity().name().equals(condition.getValue())) {
-                        violations.add(new PolicyConditionViolation(condition, component, vulnerability));
-                    }
-                } else if (PolicyCondition.Operator.IS_NOT == condition.getOperator()) {
-                    if (! vulnerability.getSeverity().name().equals(condition.getValue())) {
-                        violations.add(new PolicyConditionViolation(condition, component, vulnerability));
-                    }
+
+                final String value = condition.getValue();
+                if (!"true".equalsIgnoreCase(value) && !"false".equalsIgnoreCase(value)) {
+                    LOGGER.warn("Invalid condition value for PATCHED_VERSION subject. Expected 'true' or 'false', found: " + value);
+                    continue;
+                }
+
+                final boolean expected = Boolean.parseBoolean(value);
+
+                if (PolicyCondition.Operator.IS == condition.getOperator() && hasPatchedVersion == expected) {
+                    violations.add(new PolicyConditionViolation(condition, component, vulnerability));
+                } else if (PolicyCondition.Operator.IS_NOT == condition.getOperator() && hasPatchedVersion != expected) {
+                    violations.add(new PolicyConditionViolation(condition, component, vulnerability));
                 }
             }
         }
+
         return violations;
     }
-
 }
