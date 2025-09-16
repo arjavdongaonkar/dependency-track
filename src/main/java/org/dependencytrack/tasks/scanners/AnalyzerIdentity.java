@@ -30,5 +30,6 @@ public enum AnalyzerIdentity {
     VULNDB_ANALYZER,
     SNYK_ANALYZER,
     TRIVY_ANALYZER,
+    AWS_CODEGURU_ANALYZER,
     NONE
 }
